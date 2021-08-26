@@ -1,16 +1,21 @@
+// @ts-nocheck
 import React from "react";
 import { useRef } from "react";
 import {
   FlatList,
   Image,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import Icon from "react-native-vector-icons/AntDesign";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Buttons from "./Buttons";
 import SliderItem from "./SliderItem";
+import { useState } from "react";
+import { useEffect } from "react";
 
 type SliderItem = {
   imageUrl: string[];
@@ -21,33 +26,85 @@ type RenderItem = {
   item: SliderItem;
 };
 
+const startingPosition = "startingPos";
+
 export default () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  let flatListRef = useRef(null);
+
+  useEffect(() => {
+    async () => {
+      try {
+        const startAt = await getStartingPosition();
+        console.log("Ill start at", startAt);
+        flatListRef.current.scrollToIndex(startAt);
+      } catch (err) {
+        console.log("error startAt", err);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    setStartingPosition(currentIndex);
+    console.log("just set startingPosition to", currentIndex);
+  }, [currentIndex]);
+
   const sliderItem = ({ item }: RenderItem) => (
     <SliderItem id={item.id} imageUrl={item.imageUrl[0]} />
   );
 
-  let flatListRef = useRef(null);
-
-  const horizontalList = (
-    <FlatList
-      ref={flatListRef}
-      data={DATA}
-      renderItem={sliderItem}
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      bounces={true}
-      pagingEnabled={true}
-    />
-  );
   return (
     <View style={styles.container}>
-      {horizontalList}
-      <Buttons flatList={flatListRef} />
+      <FlatList
+        ref={flatListRef}
+        data={DATA}
+        renderItem={sliderItem}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        bounces={true}
+        pagingEnabled={true}
+      />
+      <Text>currentIndex:{currentIndex}</Text>
+      <TouchableOpacity
+        style={{ backgroundColor: "red" }}
+        onPress={async () => {
+          AsyncStorage.getAllKeys((err, keys) => {
+            AsyncStorage.multiGet(keys, (error, stores) => {
+              stores.map((result, i, store) => {
+                console.log({ [store[i][0]]: store[i][1] });
+                return true;
+              });
+            });
+          });
+        }}
+      >
+        <Text>Here</Text>
+      </TouchableOpacity>
+      <Buttons
+        flatList={flatListRef}
+        currentIndex={currentIndex}
+        setCurrentIndex={setCurrentIndex}
+      />
     </View>
   );
 };
 
 /* -------------------- */
+
+const getStartingPosition = async () => {
+  const startingPositionFound = await AsyncStorage.getItem(startingPosition);
+  console.log("value", startingPositionFound);
+  return parseInt(startingPositionFound ?? "0");
+};
+
+const setStartingPosition = async (currentIndex: number) => {
+  try {
+    await AsyncStorage.setItem(startingPosition, currentIndex.toString());
+    console.log("just set initial pos to", currentIndex);
+  } catch (err) {
+    console.log("couldnt set inital post", err);
+  }
+};
 
 const styles = StyleSheet.create({
   container: {

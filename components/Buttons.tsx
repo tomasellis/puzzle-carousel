@@ -2,12 +2,19 @@ import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Icon from "react-native-vector-icons/AntDesign";
 
-export default ({ flatList }: any) => {
+export default ({ flatList, currentIndex, setCurrentIndex }: any) => {
+  const leftExtreme = 0;
+  const rightExtreme = 2;
   return (
     <View style={styles.buttonContainer}>
       <TouchableOpacity
         onPress={() => {
-          flatList.current.scrollToIndex({ index: 0 });
+          if (currentIndex > leftExtreme) {
+            setCurrentIndex(currentIndex - 1);
+            flatList.current.scrollToIndex({ index: currentIndex - 1 });
+          } else {
+            flatList.current.scrollToIndex({ index: currentIndex });
+          }
         }}
         style={{ backgroundColor: "blue", padding: 30 }}
       >
@@ -15,7 +22,10 @@ export default ({ flatList }: any) => {
       </TouchableOpacity>
       <TouchableOpacity
         onPress={() => {
-          flatList.current.scrollToIndex({ index: 2 });
+          if (currentIndex < rightExtreme) {
+            setCurrentIndex(currentIndex + 1);
+            flatList.current.scrollToIndex({ index: currentIndex + 1 });
+          }
         }}
         style={{ backgroundColor: "blue", padding: 30 }}
       >
