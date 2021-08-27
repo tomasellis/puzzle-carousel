@@ -17,9 +17,10 @@ export default ({ imageUrl, id }: SliderItem) => {
       justifyContent: "center",
     },
     image: {
+      flex: 1,
       alignSelf: "center",
       width,
-      resizeMode: "contain",
+      resizeMode: "cover",
     },
   });
 
