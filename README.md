@@ -2,7 +2,7 @@
 
 A carousel app made with Expo (React Native). Displays blocks of images, has a dot ui pagination and buttons to change to left and right.
 
-![Working app](assets\actualSave.gif)
+![Working app](assets/actualSave.gif)
 
 ## Run Locally
 
