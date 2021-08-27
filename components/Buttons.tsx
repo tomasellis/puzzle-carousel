@@ -1,19 +1,33 @@
 import React from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  FlatListProps,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Icon from "react-native-vector-icons/AntDesign";
 
-export default ({ flatList, currentIndex, setCurrentIndex }: any) => {
-  const leftExtreme = 0;
-  const rightExtreme = 2;
+export default ({
+  flatList,
+  currentIndex,
+  setCurrentIndex,
+  setLastPosition,
+  leftExtreme,
+  rightExtreme,
+}: any) => {
   return (
     <View style={styles.buttonContainer}>
       <TouchableOpacity
         onPress={() => {
-          if (currentIndex > leftExtreme) {
-            setCurrentIndex(currentIndex - 1);
-            flatList.current.scrollToIndex({ index: currentIndex - 1 });
-          } else {
-            flatList.current.scrollToIndex({ index: currentIndex });
+          if (flatList.current) {
+            if (currentIndex > leftExtreme) {
+              setCurrentIndex(currentIndex - 1);
+              setLastPosition(currentIndex - 1);
+              flatList.current.scrollToIndex({ index: currentIndex - 1 });
+            } else {
+              setLastPosition(currentIndex);
+              flatList.current.scrollToIndex({ index: currentIndex });
+            }
           }
         }}
         style={{ backgroundColor: "blue", padding: 30 }}
@@ -24,7 +38,12 @@ export default ({ flatList, currentIndex, setCurrentIndex }: any) => {
         onPress={() => {
           if (currentIndex < rightExtreme) {
             setCurrentIndex(currentIndex + 1);
-            flatList.current.scrollToIndex({ index: currentIndex + 1 });
+            setLastPosition(currentIndex + 1);
+            if (flatList.current) {
+              flatList.current.scrollToIndex({
+                index: currentIndex + 1,
+              });
+            }
           }
         }}
         style={{ backgroundColor: "blue", padding: 30 }}

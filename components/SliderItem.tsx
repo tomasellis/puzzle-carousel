@@ -6,8 +6,8 @@ type SliderItem = {
   id: string;
 };
 
-export default ({ imageUrl }: SliderItem) => {
-  const { width, height } = useWindowDimensions();
+export default ({ imageUrl, id }: SliderItem) => {
+  const { width } = useWindowDimensions();
 
   const styles = StyleSheet.create({
     container: {
@@ -25,7 +25,11 @@ export default ({ imageUrl }: SliderItem) => {
 
   return (
     <View style={styles.container}>
-      <Image source={{ uri: `${imageUrl}` }} style={styles.image}></Image>
+      <Image
+        key={id}
+        source={{ uri: `${imageUrl}` }}
+        style={styles.image}
+      ></Image>
     </View>
   );
 };

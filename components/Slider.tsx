@@ -1,108 +1,152 @@
-// @ts-nocheck
 import React from "react";
 import { useRef } from "react";
 import {
   FlatList,
-  Image,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Buttons from "./Buttons";
 import SliderItem from "./SliderItem";
 import { useState } from "react";
 import { useEffect } from "react";
+import axios from "axios";
+import Dots from "./Dots";
 
-type SliderItem = {
-  imageUrl: string[];
-  id: string;
+const lastPosition = "lastPosition";
+type WebData = {
+  title: string;
+  images: string[];
 };
 
-type RenderItem = {
-  item: SliderItem;
+type CarouselData = {
+  id: number;
+  title: string;
+  images: string[];
 };
 
-const startingPosition = "startingPos";
+type ImagesState = {
+  carouselData: CarouselData[];
+  loading: boolean;
+};
 
 export default () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const { width } = useWindowDimensions();
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [images, setImages] = useState<ImagesState>({
+    carouselData: [],
+    loading: true,
+  });
   let flatListRef = useRef(null);
-
+  /* Get the last position the user saw */
   useEffect(() => {
-    async () => {
+    (async () => {
       try {
-        const startAt = await getStartingPosition();
-        console.log("Ill start at", startAt);
-        flatListRef.current.scrollToIndex(startAt);
+        const lastPositionFound = await AsyncStorage.getItem(lastPosition);
+        console.log("The last position was:", lastPositionFound);
+        if (lastPositionFound !== null) {
+          setCurrentIndex(parseInt(lastPositionFound));
+        }
       } catch (err) {
-        console.log("error startAt", err);
+        console.log("Error when getting the last position:", err);
       }
-    };
+    })();
+  }, []);
+  /* Get and parse images */
+  useEffect(() => {
+    (async () => {
+      const data = await getData();
+      const remixedData = data.map((block, index) => {
+        let obj = { id: index, title: block.title, images: block.images };
+        return obj;
+      });
+      setImages({ ...images, carouselData: remixedData });
+    })();
   }, []);
 
   useEffect(() => {
-    setStartingPosition(currentIndex);
-    console.log("just set startingPosition to", currentIndex);
-  }, [currentIndex]);
+    if (images.carouselData[0]) {
+      setImages({ ...images, loading: false });
+    }
+    console.log("We at:", images.loading);
+  }, [images.carouselData]);
+  /* 
+      Update the last position in the carousel everytime currentIndex changes
+      currentIndex is increased/decreased by the buttons
+  */
+  const getData = async (): Promise<WebData[]> => {
+    console.log("getting data");
+    try {
+      const data = await axios.get(
+        "https://aqueous-gorge-11678.herokuapp.com/"
+      );
+      console.log(data.data);
+      return data.data;
+    } catch (err) {
+      console.log("fallo axios.", err);
+    }
+    return [{ images: [], title: "" }];
+  };
+
+  type RenderItem = {
+    item: CarouselData;
+  };
 
   const sliderItem = ({ item }: RenderItem) => (
-    <SliderItem id={item.id} imageUrl={item.imageUrl[0]} />
+    <SliderItem
+      id={item.id.toString()}
+      key={item.id.toString()}
+      imageUrl={item.images[0]}
+    />
   );
 
-  return (
+  return images.loading === false ? (
     <View style={styles.container}>
       <FlatList
         ref={flatListRef}
-        data={DATA}
+        data={images.carouselData}
         renderItem={sliderItem}
         horizontal
+        initialScrollIndex={currentIndex}
         showsHorizontalScrollIndicator={false}
+        getItemLayout={(data, index) => ({
+          length: width,
+          offset: width * index,
+          index,
+        })}
         bounces={true}
+        keyExtractor={(item) => item.id.toString()}
         pagingEnabled={true}
       />
       <Text>currentIndex:{currentIndex}</Text>
-      <TouchableOpacity
-        style={{ backgroundColor: "red" }}
-        onPress={async () => {
-          AsyncStorage.getAllKeys((err, keys) => {
-            AsyncStorage.multiGet(keys, (error, stores) => {
-              stores.map((result, i, store) => {
-                console.log({ [store[i][0]]: store[i][1] });
-                return true;
-              });
-            });
-          });
-        }}
-      >
-        <Text>Here</Text>
-      </TouchableOpacity>
+      <Dots></Dots>
       <Buttons
         flatList={flatListRef}
         currentIndex={currentIndex}
         setCurrentIndex={setCurrentIndex}
-      />
+        setLastPosition={setLastPosition}
+        leftExtreme={0}
+        rightExtreme={images.carouselData.length - 1}
+      ></Buttons>
+    </View>
+  ) : (
+    <View style={styles.container}>
+      <Text>Loading</Text>
     </View>
   );
 };
 
 /* -------------------- */
 
-const getStartingPosition = async () => {
-  const startingPositionFound = await AsyncStorage.getItem(startingPosition);
-  console.log("value", startingPositionFound);
-  return parseInt(startingPositionFound ?? "0");
-};
-
-const setStartingPosition = async (currentIndex: number) => {
+const setLastPosition = async (currentIndex: number) => {
   try {
-    await AsyncStorage.setItem(startingPosition, currentIndex.toString());
-    console.log("just set initial pos to", currentIndex);
+    await AsyncStorage.setItem(lastPosition, currentIndex.toString());
+    console.log("Just set last position to:", currentIndex);
   } catch (err) {
-    console.log("couldnt set inital post", err);
+    console.log("Couldn't set last position:", err);
   }
 };
 
