@@ -2,6 +2,23 @@ import React from "react";
 import { StyleSheet, TouchableOpacity, View, FlatList } from "react-native";
 import Icon from "react-native-vector-icons/AntDesign";
 
+type CarouselData = {
+  id: number;
+  title: string;
+  images: string[];
+};
+
+type FlatListData = {
+  imageUri: string;
+  id: number;
+};
+
+type ImagesState = {
+  rawCarouselImages: CarouselData[];
+  loading: boolean;
+  flatListImages: FlatListData[];
+};
+
 type buttonProps = {
   flatListRef: React.MutableRefObject<FlatList | null>;
   currentIndex: number;
@@ -9,6 +26,11 @@ type buttonProps = {
   setLastPosition: (arg: number) => Promise<void>;
   leftExtreme: number;
   rightExtreme: number;
+  setLastImageUri: (arg: string) => Promise<void>;
+  rawCarouselImages: CarouselData[];
+  currentImage: string;
+  setImages: React.Dispatch<React.SetStateAction<ImagesState>>;
+  images: ImagesState;
 };
 
 export default ({
@@ -18,6 +40,11 @@ export default ({
   setLastPosition,
   leftExtreme,
   rightExtreme,
+  setLastImageUri,
+  currentImage,
+  rawCarouselImages,
+  setImages,
+  images,
 }: buttonProps) => {
   const iconSize = 100; //Size of arrows
 
@@ -30,20 +57,76 @@ export default ({
     },
   });
 
+  const handleLeftButton = () => {
+    const arrayOfImages = updateFlatListImages(
+      rawCarouselImages,
+      currentIndex,
+      true
+    );
+    setImages({ ...images, flatListImages: arrayOfImages });
+    if (flatListRef.current !== null) {
+      setCurrentIndex(currentIndex - 1); // Move the current position to the left
+      setLastPosition(currentIndex - 1); // Save position to asyncstorage for later use
+      flatListRef.current.scrollToIndex({ index: currentIndex - 1 });
+    }
+  };
+
+  const handleRightButton = () => {
+    const arrayOfImages = updateFlatListImages(
+      // Get the new images
+      rawCarouselImages,
+      currentIndex,
+      false
+    );
+    setImages({ ...images, flatListImages: arrayOfImages }); // Update images
+    if (flatListRef.current !== null) {
+      setCurrentIndex(currentIndex + 1); // Move the current position to the right
+      setLastPosition(currentIndex + 1); // Save position to asyncstorage for later use
+      flatListRef.current.scrollToIndex({ index: currentIndex + 1 });
+    }
+  };
+
+  const updateFlatListImages = (
+    rawCarouselImages: CarouselData[],
+    currentImageIndex: number,
+    left: boolean
+  ): FlatListData[] => {
+    let array = Array(rawCarouselImages[0].images.length); // Make an array to populate
+    if (left) {
+      // If the left button was pushed
+      for (let i = 0; i < array.length; i++) {
+        // Move through the array populating it with imagesUris and ids
+        const randomNumber = Math.floor(Math.random() * array.length);
+        if (i === currentImageIndex - 1) {
+          setLastImageUri(rawCarouselImages[i].images[randomNumber]); // Since we are moving left, we need to update the last image,
+        } // to be the incoming left one
+        array[i] = {
+          id: rawCarouselImages[i].id,
+          imageUri: rawCarouselImages[i].images[randomNumber],
+        };
+      }
+    } else {
+      for (let i = 0; i < array.length; i++) {
+        const randomNumber = Math.floor(Math.random() * array.length);
+        if (i === currentImageIndex + 1) {
+          setLastImageUri(rawCarouselImages[i].images[randomNumber]); // The same that the last one, but for the right button
+        }
+        array[i] = {
+          id: rawCarouselImages[i].id,
+          imageUri: rawCarouselImages[i].images[randomNumber],
+        };
+      }
+    }
+    return array;
+  };
+
   return (
     // Buttons container
     <View style={styles.buttonContainer}>
       {/* Left button */}
       <TouchableOpacity
         disabled={currentIndex !== leftExtreme ? false : true} // If user is in the first block, disable left button
-        onPress={() => {
-          if (flatListRef.current !== null) {
-            // If we have a reference, move to the left
-            setCurrentIndex(currentIndex - 1);
-            setLastPosition(currentIndex - 1); // Save position to asyncstorage for later use
-            flatListRef.current.scrollToIndex({ index: currentIndex - 1 });
-          }
-        }}
+        onPress={handleLeftButton}
       >
         <Icon
           name="leftcircle"
@@ -55,16 +138,7 @@ export default ({
       {/* Right button */}
       <TouchableOpacity
         disabled={currentIndex !== rightExtreme ? false : true} // If user is in the last block, disable right button
-        onPress={() => {
-          if (flatListRef.current) {
-            // If we have a reference, move to the right
-            setCurrentIndex(currentIndex + 1);
-            setLastPosition(currentIndex + 1); // Save position to asyncstorage for later use
-            flatListRef.current.scrollToIndex({
-              index: currentIndex + 1,
-            });
-          }
-        }}
+        onPress={handleRightButton}
       >
         <Icon
           name="rightcircle"

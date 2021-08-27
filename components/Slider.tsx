@@ -22,53 +22,50 @@ type WebData = {
 };
 
 type CarouselData = {
-  // Data that we use in the carousel
+  // Raw carousel data
   id: number;
   title: string;
   images: string[];
 };
 
+type FlatListData = {
+  imageUri: string;
+  id: number;
+};
+
 type ImagesState = {
-  carouselData: CarouselData[];
+  rawCarouselImages: CarouselData[];
   loading: boolean;
+  flatListImages: FlatListData[];
 };
 
 type RenderItem = {
-  item: CarouselData;
+  item: FlatListData;
 };
 
 // Constant string to avoid misstyping
 const lastPosition = "lastPosition";
+const lastImageUri = "lastImageUri";
 
 export default () => {
+  // To setup Flatlist
   const { width } = useWindowDimensions();
 
   // State to store the block the user is looking at
   const [currentIndex, setCurrentIndex] = useState<number>(0);
 
-  // State to store the images from the web
+  // State to store current image uri
+  const [currentImage, setCurrentImage] = useState<string>("");
+
+  // State to store the images from the web, loading and the changing images
   const [images, setImages] = useState<ImagesState>({
-    carouselData: [],
+    rawCarouselImages: [],
     loading: true,
+    flatListImages: [],
   });
 
   // Reference to our flatlist to use its methods
   let flatListRef = useRef<FlatList | null>(null);
-
-  /* Get the last position the user saw */
-  useEffect(() => {
-    (async () => {
-      try {
-        const lastPositionFound = await AsyncStorage.getItem(lastPosition);
-        console.log("The last position was:", lastPositionFound);
-        if (lastPositionFound !== null) {
-          setCurrentIndex(parseInt(lastPositionFound));
-        }
-      } catch (err) {
-        console.log("Error when getting the last position:", err);
-      }
-    })();
-  }, []);
 
   // Get and rearrange images when loading
   useEffect(() => {
@@ -78,21 +75,54 @@ export default () => {
         let obj = { id: index, title: block.title, images: block.images };
         return obj;
       });
-      setImages({ ...images, carouselData: remixedData });
+      setImages({ ...images, rawCarouselImages: remixedData });
     })();
   }, []);
 
+  /* Get the last block the user saw*/
+  useEffect(() => {
+    (async () => {
+      try {
+        const lastPositionFound = await AsyncStorage.getItem(lastPosition);
+        const lastImageUriFound = await AsyncStorage.getItem(lastImageUri);
+        console.log(
+          "The last position was:",
+          lastPositionFound,
+          lastImageUriFound
+        );
+        if (lastPositionFound && lastImageUriFound) {
+          setCurrentImage(lastImageUriFound);
+          setCurrentIndex(parseInt(lastPositionFound));
+        }
+      } catch (err) {
+        console.log("Error when getting the last position:", err);
+      }
+    })();
+  }, []);
+
+  // Serve the first batch of images to the FlatList
+  useEffect(() => {
+    if (images.rawCarouselImages[0]) {
+      let newImages = createFlatListImages(
+        images.rawCarouselImages,
+        currentIndex,
+        currentImage
+      );
+      setImages({ ...images, flatListImages: newImages });
+    }
+  }, [images.rawCarouselImages]);
+
   // Flag when loading is finished
   useEffect(() => {
-    if (images.carouselData[0]) {
+    if (images.rawCarouselImages[0] && images.flatListImages[0]) {
       setImages({ ...images, loading: false });
     }
-  }, [images.carouselData]);
+  }, [images.rawCarouselImages, images.flatListImages]);
 
   const getData = async (): Promise<WebData[]> => {
     try {
       const data = await axios.get(
-        "https://aqueous-gorge-11678.herokuapp.com/"
+        "https://puzzle-carousel-server.herokuapp.com/"
       );
       return data.data;
     } catch (err) {
@@ -106,7 +136,7 @@ export default () => {
     <SliderItem
       id={item.id.toString()}
       key={item.id.toString()}
-      imageUrl={item.images[0]}
+      imageUrl={item.imageUri}
     />
   );
 
@@ -116,7 +146,7 @@ export default () => {
       <View style={styles.listContainer}>
         <FlatList
           ref={flatListRef}
-          data={images.carouselData}
+          data={images.flatListImages}
           renderItem={sliderItem}
           horizontal
           initialScrollIndex={currentIndex}
@@ -134,7 +164,7 @@ export default () => {
       </View>
       {/* The cosmetic pagination dots */}
       <Dots
-        blocksQuantity={images.carouselData.length}
+        blocksQuantity={images.rawCarouselImages.length}
         currentBlock={currentIndex}
         circleHeight={25}
       ></Dots>
@@ -145,7 +175,12 @@ export default () => {
         setCurrentIndex={setCurrentIndex}
         setLastPosition={setLastPosition}
         leftExtreme={0}
-        rightExtreme={images.carouselData.length - 1}
+        rightExtreme={images.flatListImages.length - 1}
+        setLastImageUri={setLastImageUri}
+        rawCarouselImages={images.rawCarouselImages}
+        currentImage={currentImage}
+        setImages={setImages}
+        images={images}
       ></Buttons>
     </View>
   ) : (
@@ -158,12 +193,47 @@ export default () => {
 
 /* -------------------- */
 
+// Save the last position the user was at
 const setLastPosition = async (currentIndex: number) => {
   try {
     await AsyncStorage.setItem(lastPosition, currentIndex.toString());
   } catch (err) {
     console.info("Couldn't set last position:", err);
   }
+};
+
+// Save the last image the user saw
+const setLastImageUri = async (currentImageUri: string) => {
+  try {
+    await AsyncStorage.setItem(lastImageUri, currentImageUri);
+  } catch (err) {
+    console.info("Couldn't set last position:", err);
+  }
+};
+
+// Create the array to be consumed by the FlatList
+const createFlatListImages = (
+  rawCarouselImages: CarouselData[],
+  currentImageIndex: number,
+  currentImage: string
+) => {
+  let array = Array(rawCarouselImages[0].images.length); // Make an empty array to populate
+  for (let i = 0; i < array.length; i++) {
+    if (i === currentImageIndex && currentImage) {
+      array[i] = {
+        id: currentImageIndex,
+        imageUri: currentImage,
+      };
+    } else {
+      array[i] = {
+        id: rawCarouselImages[i].id,
+        imageUri:
+          rawCarouselImages[i].images[Math.floor(Math.random() * array.length)],
+      };
+    }
+  }
+  console.log(array);
+  return array;
 };
 
 const styles = StyleSheet.create({
