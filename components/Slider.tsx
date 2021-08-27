@@ -4,7 +4,6 @@ import {
   FlatList,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
   useWindowDimensions,
 } from "react-native";
@@ -16,13 +15,14 @@ import { useEffect } from "react";
 import axios from "axios";
 import Dots from "./Dots";
 
-const lastPosition = "lastPosition";
 type WebData = {
+  // Data that we receive from the web
   title: string;
   images: string[];
 };
 
 type CarouselData = {
+  // Data that we use in the carousel
   id: number;
   title: string;
   images: string[];
@@ -33,14 +33,28 @@ type ImagesState = {
   loading: boolean;
 };
 
+type RenderItem = {
+  item: CarouselData;
+};
+
+// Constant string to avoid misstyping
+const lastPosition = "lastPosition";
+
 export default () => {
   const { width } = useWindowDimensions();
+
+  // State to store the block the user is looking at
   const [currentIndex, setCurrentIndex] = useState<number>(0);
+
+  // State to store the images from the web
   const [images, setImages] = useState<ImagesState>({
     carouselData: [],
     loading: true,
   });
-  let flatListRef = useRef(null);
+
+  // Reference to our flatlist to use its methods
+  let flatListRef = useRef<FlatList | null>(null);
+
   /* Get the last position the user saw */
   useEffect(() => {
     (async () => {
@@ -55,10 +69,11 @@ export default () => {
       }
     })();
   }, []);
-  /* Get and parse images */
+
+  // Get and rearrange images when loading
   useEffect(() => {
     (async () => {
-      const data = await getData();
+      const data: WebData[] = await getData();
       const remixedData = data.map((block, index) => {
         let obj = { id: index, title: block.title, images: block.images };
         return obj;
@@ -67,15 +82,13 @@ export default () => {
     })();
   }, []);
 
+  // Flag when loading is finished
   useEffect(() => {
     if (images.carouselData[0]) {
       setImages({ ...images, loading: false });
     }
   }, [images.carouselData]);
-  /* 
-      Update the last position in the carousel everytime currentIndex changes
-      currentIndex is increased/decreased by the buttons
-  */
+
   const getData = async (): Promise<WebData[]> => {
     try {
       const data = await axios.get(
@@ -83,15 +96,12 @@ export default () => {
       );
       return data.data;
     } catch (err) {
-      console.log("fallo axios.", err);
+      console.log("Failed getting images:", err);
+      return [{ images: [""], title: "error" }];
     }
-    return [{ images: [], title: "" }];
   };
 
-  type RenderItem = {
-    item: CarouselData;
-  };
-
+  // Function to make each item for the FlatList
   const sliderItem = ({ item }: RenderItem) => (
     <SliderItem
       id={item.id.toString()}
@@ -102,6 +112,7 @@ export default () => {
 
   return images.loading === false ? (
     <View>
+      {/* The actual list */}
       <View style={styles.listContainer}>
         <FlatList
           ref={flatListRef}
@@ -111,21 +122,25 @@ export default () => {
           initialScrollIndex={currentIndex}
           showsHorizontalScrollIndicator={false}
           getItemLayout={(data, index) => ({
-            length: width,
+            // Prop to avoid dynamicism of FlatList and avoid errors
+            length: width, // by letting FlatList know the full size of our rows
             offset: width * index,
             index,
           })}
-          bounces={true}
+          bounces={false}
           keyExtractor={(item) => item.id.toString()}
           pagingEnabled={true}
         ></FlatList>
       </View>
+      {/* The cosmetic pagination dots */}
       <Dots
         blocksQuantity={images.carouselData.length}
         currentBlock={currentIndex}
+        circleHeight={25}
       ></Dots>
+      {/* The buttons */}
       <Buttons
-        flatList={flatListRef}
+        flatListRef={flatListRef}
         currentIndex={currentIndex}
         setCurrentIndex={setCurrentIndex}
         setLastPosition={setLastPosition}
@@ -135,6 +150,7 @@ export default () => {
     </View>
   ) : (
     <View style={styles.loading}>
+      {/* Loading screen */}
       <Text>Loading</Text>
     </View>
   );

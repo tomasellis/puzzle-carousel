@@ -1,23 +1,29 @@
 import React from "react";
 import { useEffect } from "react";
-import { Image, StyleSheet, View, useWindowDimensions } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Circle from "./Circle";
 
-const circleHeight = 25;
+type DotsProps = {
+  blocksQuantity: number;
+  currentBlock: number;
+  circleHeight: number;
+};
 
-export default ({ blocksQuantity, currentBlock }: any) => {
-  const { width } = useWindowDimensions();
+export default ({ blocksQuantity, currentBlock, circleHeight }: DotsProps) => {
   const styles = StyleSheet.create({
     container: {
       flex: 0.2,
       flexDirection: "row",
       justifyContent: "center",
-      width: width,
     },
   });
 
-  const fillWithCircles = (currentBlock: any) => {
-    let circleArray: any = [];
+  /* 
+     Function to create an array of circles, receives the block the user is currently looking
+     at to mark the circle with a white dot
+  */
+  const fillWithDots = (currentBlock: number) => {
+    let circleArray: JSX.Element[] = [];
     for (let i = 0; i < blocksQuantity; i++) {
       if (currentBlock === i) {
         circleArray.push(
@@ -31,10 +37,13 @@ export default ({ blocksQuantity, currentBlock }: any) => {
     }
     return circleArray;
   };
-  let circles: [] = fillWithCircles(currentBlock);
 
+  // Create first batch of dots
+  let circles: JSX.Element[] = fillWithDots(currentBlock);
+
+  // Everytime the user changes the block, re-render the dots
   useEffect(() => {
-    circles = fillWithCircles(currentBlock);
+    circles = fillWithDots(currentBlock);
   }, [currentBlock]);
 
   return <View style={styles.container}>{circles}</View>;

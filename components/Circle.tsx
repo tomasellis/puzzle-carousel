@@ -1,16 +1,12 @@
 import React from "react";
-import { StyleSheet, View, useWindowDimensions } from "react-native";
+import { StyleSheet, View } from "react-native";
 
-const padding = (a: number, b?: number, c?: number, d?: number) => {
-  return {
-    paddingTop: a,
-    paddingRight: b ? b : a,
-    paddingBottom: c ? c : a,
-    paddingLeft: d ? d : b ? b : a,
-  };
+type CircleProps = {
+  circleHeight: number;
+  mark: boolean;
 };
 
-export default ({ circleHeight, mark }: any) => {
+export default ({ circleHeight, mark }: CircleProps) => {
   const styles = StyleSheet.create({
     circle: {
       margin: 10,
@@ -39,7 +35,9 @@ export default ({ circleHeight, mark }: any) => {
       alignSelf: "center",
     },
   });
+
   if (mark === true) {
+    // If this circle was marked, mark it with a tiny dot
     return (
       <View style={styles.circle}>
         <View style={[styles.circle, styles.littleCircle]} />
