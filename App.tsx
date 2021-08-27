@@ -1,21 +1,22 @@
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import Slider from "./components/Slider";
 export default function App() {
+  const { width, height } = useWindowDimensions();
+  const styles = StyleSheet.create({
+    topContainer: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 20,
+    },
+  });
+
   return (
-    <View style={styles.container}>
+    <View style={styles.topContainer}>
+      <StatusBar style="auto" hidden />
       <Slider />
-      <StatusBar style="auto" />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

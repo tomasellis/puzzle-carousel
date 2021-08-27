@@ -11,15 +11,16 @@ export default ({ imageUrl, id }: SliderItem) => {
 
   const styles = StyleSheet.create({
     container: {
-      backgroundColor: "blue",
       flex: 1,
       width,
-      alignContent: "center",
+      flexDirection: "column",
       justifyContent: "center",
     },
     image: {
-      height: 400,
+      flex: 1,
+      alignSelf: "center",
       width,
+      resizeMode: "contain",
     },
   });
 

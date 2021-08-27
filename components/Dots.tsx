@@ -1,51 +1,41 @@
 import React from "react";
+import { useEffect } from "react";
 import { Image, StyleSheet, View, useWindowDimensions } from "react-native";
+import Circle from "./Circle";
 
 const circleHeight = 25;
 
-export default ({}) => {
+export default ({ blocksQuantity, currentBlock }: any) => {
   const { width } = useWindowDimensions();
   const styles = StyleSheet.create({
     container: {
+      flex: 0.2,
       flexDirection: "row",
       justifyContent: "center",
-      alignContent: "center",
       width: width,
-      height: circleHeight,
-      borderWidth: 1,
-      borderColor: "black",
-    },
-    circle: {
-      justifyContent: "center",
-      alignContent: "center",
-      width: circleHeight,
-      height: circleHeight,
-      borderRadius: 100 / 2,
-      backgroundColor: "black",
-      shadowColor: "#000",
-      shadowOffset: {
-        width: 0,
-        height: 5,
-      },
-      shadowOpacity: 0.34,
-      shadowRadius: 6.27,
-
-      elevation: 10,
-    },
-    littleCircle: {
-      width: 10,
-      height: 10,
-      backgroundColor: "white",
-      position: "relative",
-      alignSelf: "center",
     },
   });
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.circle}>
-        <View style={[styles.circle, styles.littleCircle]} />
-      </View>
-    </View>
-  );
+  const fillWithCircles = (currentBlock: any) => {
+    let circleArray: any = [];
+    for (let i = 0; i < blocksQuantity; i++) {
+      if (currentBlock === i) {
+        circleArray.push(
+          <Circle key={i} circleHeight={circleHeight} mark={true}></Circle>
+        );
+      } else {
+        circleArray.push(
+          <Circle key={i} circleHeight={circleHeight} mark={false}></Circle>
+        );
+      }
+    }
+    return circleArray;
+  };
+  let circles: [] = fillWithCircles(currentBlock);
+
+  useEffect(() => {
+    circles = fillWithCircles(currentBlock);
+  }, [currentBlock]);
+
+  return <View style={styles.container}>{circles}</View>;
 };

@@ -4,6 +4,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 import Icon from "react-native-vector-icons/AntDesign";
 
@@ -15,49 +16,52 @@ export default ({
   leftExtreme,
   rightExtreme,
 }: any) => {
+  const { width } = useWindowDimensions();
+  const iconSize = 100;
+  const styles = StyleSheet.create({
+    buttonContainer: {
+      flex: 0.6,
+      flexDirection: "row",
+      justifyContent: "space-around",
+      alignContent: "center",
+    },
+  });
   return (
     <View style={styles.buttonContainer}>
       <TouchableOpacity
+        disabled={currentIndex !== leftExtreme ? false : true}
         onPress={() => {
           if (flatList.current) {
-            if (currentIndex > leftExtreme) {
-              setCurrentIndex(currentIndex - 1);
-              setLastPosition(currentIndex - 1);
-              flatList.current.scrollToIndex({ index: currentIndex - 1 });
-            } else {
-              setLastPosition(currentIndex);
-              flatList.current.scrollToIndex({ index: currentIndex });
-            }
+            setCurrentIndex(currentIndex - 1);
+            setLastPosition(currentIndex - 1);
+            flatList.current.scrollToIndex({ index: currentIndex - 1 });
           }
         }}
-        style={{ backgroundColor: "blue", padding: 30 }}
       >
-        <Icon name="leftcircle" size={80} color="red" />
+        <Icon
+          name="leftcircle"
+          size={iconSize}
+          color={currentIndex !== leftExtreme ? "black" : "lightgrey"}
+        />
       </TouchableOpacity>
       <TouchableOpacity
+        disabled={currentIndex !== rightExtreme ? false : true}
         onPress={() => {
-          if (currentIndex < rightExtreme) {
+          if (flatList.current) {
             setCurrentIndex(currentIndex + 1);
             setLastPosition(currentIndex + 1);
-            if (flatList.current) {
-              flatList.current.scrollToIndex({
-                index: currentIndex + 1,
-              });
-            }
+            flatList.current.scrollToIndex({
+              index: currentIndex + 1,
+            });
           }
         }}
-        style={{ backgroundColor: "blue", padding: 30 }}
       >
-        <Icon name="caretright" size={80} color="black" />
+        <Icon
+          name="rightcircle"
+          size={iconSize}
+          color={currentIndex !== rightExtreme ? "black" : "lightgrey"}
+        />
       </TouchableOpacity>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  buttonContainer: {
-    display: "flex",
-    flexDirection: "row",
-    marginTop: 30,
-  },
-});
