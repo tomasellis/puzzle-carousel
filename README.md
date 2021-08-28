@@ -2,7 +2,7 @@
 
 A carousel app made with Expo (React Native). Displays blocks of images, has a dot ui pagination and buttons to change to left and right.
 
-<img src="assets/actualSave.gif" height="300">
+<img src="assets/actualSave.gif" height="400">
 
 ## Run Locally
 
@@ -29,3 +29,7 @@ Start the app
 ```bash
   expo start
 ```
+
+Scan the QR with the Expo Go app
+
+
