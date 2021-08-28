@@ -1,6 +1,6 @@
 # Puzzle Carousel
 
-A carousel app made with Expo (React Native). Displays blocks of images, has a dot ui pagination and buttons to change to left and right. It saves the last viewed block for the user to return back to it.
+A carousel app made with Expo (React Native). Displays blocks of images([hosted here!](https://github.com/tomasellis/puzzle-carousel-server)), has a dot ui pagination and buttons to change to left and right. It saves the last viewed block for the user to return back to it.
 
 <img src="assets/actualSave.gif" height="400">
 
