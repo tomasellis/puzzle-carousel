@@ -1,6 +1,6 @@
 # Puzzle Carousel
 
-A carousel app made with Expo (React Native). Displays blocks of images, has a dot ui pagination and buttons to change to left and right.
+A carousel app made with Expo (React Native). Displays blocks of images, has a dot ui pagination and buttons to change to left and right. It saves the last viewed block for the user to return back to it.
 
 <img src="assets/actualSave.gif" height="400">
 
@@ -31,5 +31,3 @@ Start the app
 ```
 
 Scan the QR with the Expo Go app
-
-
