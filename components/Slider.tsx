@@ -6,6 +6,7 @@ import {
   Text,
   View,
   useWindowDimensions,
+  Animated,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Buttons from "./Buttons";
@@ -14,6 +15,8 @@ import { useState } from "react";
 import { useEffect } from "react";
 import axios from "axios";
 import Dots from "./Dots";
+import { useCallback } from "react";
+import { useLayoutEffect } from "react";
 
 type WebData = {
   // Data that we receive from the web
@@ -46,10 +49,14 @@ type RenderItem = {
 // Constant string to avoid misstyping
 const lastPosition = "lastPosition";
 const lastImageUri = "lastImageUri";
+const separatorWidth = 2;
 
 export default () => {
   // To setup Flatlist
   const { width } = useWindowDimensions();
+  const imageWidth = Math.floor(width - width / 4); // Arbitrary image width
+  let centerImageOnLoad = false;
+  const totalItemSize = imageWidth + separatorWidth;
 
   // State to store the block the user is looking at
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -65,7 +72,7 @@ export default () => {
   });
 
   // Reference to our flatlist to use its methods
-  let flatListRef = useRef<FlatList | null>(null);
+  const flatListRef = useRef<FlatList<any> | null>(null);
 
   // Get and rearrange images when loading
   useEffect(() => {
@@ -85,18 +92,11 @@ export default () => {
       try {
         const lastPositionFound = await AsyncStorage.getItem(lastPosition);
         const lastImageUriFound = await AsyncStorage.getItem(lastImageUri);
-        console.log(
-          "The last position was:",
-          lastPositionFound,
-          lastImageUriFound
-        );
         if (lastPositionFound && lastImageUriFound) {
           setCurrentImage(lastImageUriFound);
           setCurrentIndex(parseInt(lastPositionFound));
         }
-      } catch (err) {
-        console.log("Error when getting the last position:", err);
-      }
+      } catch (err) {}
     })();
   }, []);
 
@@ -126,7 +126,7 @@ export default () => {
       );
       return data.data;
     } catch (err) {
-      console.log("Failed getting images:", err);
+      console.info("Failed getting images:", err);
       return [{ images: [""], title: "error" }];
     }
   };
@@ -137,8 +137,35 @@ export default () => {
       id={item.id.toString()}
       key={item.id.toString()}
       imageUrl={item.imageUri}
+      width={imageWidth}
     />
   );
+
+  const FlatListItemSeparator = () => {
+    return (
+      <View
+        style={{
+          height: "100%",
+          width: separatorWidth,
+          backgroundColor: "#000000",
+        }}
+      />
+    );
+  };
+
+  // Used to center the first block to load
+  const onSizeChange = (w: number, h: number) => {
+    if (!centerImageOnLoad) {
+      centerImageOnLoad = false;
+      setTimeout(() => {
+        flatListRef.current?.scrollToIndex({
+          index: currentIndex,
+          viewPosition: 0.5,
+          viewOffset: 0,
+        });
+      }, 0);
+    }
+  };
 
   return images.loading === false ? (
     <View>
@@ -149,17 +176,21 @@ export default () => {
           data={images.flatListImages}
           renderItem={sliderItem}
           horizontal
-          initialScrollIndex={currentIndex}
           showsHorizontalScrollIndicator={false}
+          scrollEnabled={false}
+          snapToInterval={totalItemSize}
           getItemLayout={(data, index) => ({
             // Prop to avoid dynamicism of FlatList and avoid errors
-            length: width, // by letting FlatList know the full size of our rows
-            offset: width * index,
+            // by letting FlatList know the full size of our row
+            length: totalItemSize,
+            offset: totalItemSize * index,
             index,
           })}
-          bounces={false}
           keyExtractor={(item) => item.id.toString()}
-          pagingEnabled={true}
+          ItemSeparatorComponent={FlatListItemSeparator}
+          onContentSizeChange={(w, h) => {
+            onSizeChange(Math.floor(w), Math.floor(h));
+          }}
         ></FlatList>
       </View>
       {/* The cosmetic pagination dots */}
@@ -191,7 +222,7 @@ export default () => {
   );
 };
 
-/* -------------------- */
+/* --------------------------- HELPERS --------------------------- */
 
 // Save the last position the user was at
 const setLastPosition = async (currentIndex: number) => {
@@ -207,7 +238,7 @@ const setLastImageUri = async (currentImageUri: string) => {
   try {
     await AsyncStorage.setItem(lastImageUri, currentImageUri);
   } catch (err) {
-    console.info("Couldn't set last position:", err);
+    console.info("Couldn't set last image uri:", err);
   }
 };
 
@@ -217,9 +248,12 @@ const createFlatListImages = (
   currentImageIndex: number,
   currentImage: string
 ) => {
-  let array = Array(rawCarouselImages[0].images.length); // Make an empty array to populate
-  for (let i = 0; i < array.length; i++) {
-    if (i === currentImageIndex && currentImage) {
+  let array = Array(rawCarouselImages.length); // Make an empty array to populate
+  for (let i = 0; i < rawCarouselImages.length; i++) {
+    let randNumber = Math.floor(
+      Math.random() * rawCarouselImages[0].images.length
+    );
+    if (i === currentImageIndex && currentImage !== "") {
       array[i] = {
         id: currentImageIndex,
         imageUri: currentImage,
@@ -227,21 +261,16 @@ const createFlatListImages = (
     } else {
       array[i] = {
         id: rawCarouselImages[i].id,
-        imageUri:
-          rawCarouselImages[i].images[Math.floor(Math.random() * array.length)],
+        imageUri: rawCarouselImages[i].images[randNumber],
       };
     }
   }
-  console.log(array);
   return array;
 };
 
 const styles = StyleSheet.create({
   listContainer: {
     flex: 1,
-    flexDirection: "column",
-    justifyContent: "center",
-    alignContent: "center",
   },
   loading: {
     flex: 1,

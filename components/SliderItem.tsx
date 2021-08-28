@@ -1,25 +1,25 @@
 import React from "react";
-import { Image, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 
 type SliderItem = {
   imageUrl: string;
   id: string;
+  width: number;
 };
 
-export default ({ imageUrl, id }: SliderItem) => {
-  const { width } = useWindowDimensions();
-
+export default ({ imageUrl, id, width }: SliderItem) => {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      width,
-      flexDirection: "column",
+      width: width,
+      flexDirection: "row",
       justifyContent: "center",
+      alignContent: "center",
     },
     image: {
-      flex: 1,
-      alignSelf: "center",
-      width,
+      flexGrow: 1,
+      borderColor: "red",
+      width: "100%",
       resizeMode: "cover",
     },
   });
@@ -28,8 +28,8 @@ export default ({ imageUrl, id }: SliderItem) => {
     <View style={styles.container}>
       <Image
         key={id}
-        source={{ uri: `${imageUrl}` }}
         style={styles.image}
+        source={{ uri: `${imageUrl}` }}
       ></Image>
     </View>
   );
